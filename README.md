@@ -13,7 +13,7 @@ Usage of cp-http:
   -r string
         file server root url (default "http://localhost:8000/")
   -t int
-        HTTP requests timeout in seconds (default 5)
+        HTTP requests timeout in seconds (default 20)
   -w int
-        number of workers (maximum concurrent HTTP requests) (default 20)
+        number of workers (maximum concurrent HTTP requests) (default 10)
 ```

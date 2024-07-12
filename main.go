@@ -265,39 +265,36 @@ func SanitizeRelativeHref(href string) (string, bool) {
 func main() {
 	var (
 		root    = flag.String("r", "http://localhost:8000/", "file server root url")
-		workers = flag.Int("w", 20, "number of workers (maximum concurrent HTTP requests)")
+		workers = flag.Int("w", 10, "number of workers (maximum concurrent HTTP requests)")
 		depth   = flag.Int("d", 20, "maximum crawl depth")
-		timeout = flag.Int("t", 5, "HTTP requests timeout in seconds")
+		timeout = flag.Int("t", 20, "HTTP requests timeout in seconds")
 	)
 	flag.Parse()
 
 	MustInitDB(*root)
 
 	c := newCrawler(*root, *workers, *depth, *timeout)
-
-	c.seen.Insert(c.root)
-	for range c.workers {
-		go c.worker()
-	}
-
 	parsed, err := urllib.Parse(c.root)
 	if err != nil {
 		log.Fatalf("error parsing root url %s -> %s\n", c.root, err)
 	}
-
 	err = os.Mkdir(parsed.Host, os.FileMode(0755))
 	if err != nil {
 		if !errors.Is(err, os.ErrExist) {
 			log.Fatalf("failed creating root directory %s -> %s\n", parsed.Host, err)
 		}
 	}
-
 	err = os.Chdir(parsed.Host)
 	if err != nil {
 		log.Fatalf("error changing working directory into %s -> %s\n", parsed.Host, err)
 	}
 
+	for range c.workers {
+		go c.worker()
+	}
+
 	c.wg.Add(1)
+	c.seen.Insert(c.root)
 	c.queue <- Page{
 		url:   c.root,
 		path:  "",
